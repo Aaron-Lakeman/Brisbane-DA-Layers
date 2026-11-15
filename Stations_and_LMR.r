@@ -30,10 +30,6 @@ lmr_near_stations <- st_intersection(LMR_proj,st_union(station_buffers))
 # View the summary
 print(lmr_near_stations)
 
-# Map the results
-plot(st_geometry(station_buffers), border = "lightblue", main = "LMR Land Within 400m Buffer")
-plot(st_geometry(lmr_near_stations), col = "salmon", border = NA, add = TRUE)
-
 station_buffers_clean <- station_buffers %>%
   select(-ln, -stops, -facility)
 
