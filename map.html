@@ -5,7 +5,7 @@
     <title>Brisbane Spatial Feasibility Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- 1. Leaflet CSS styling for the map interface -->
+    <!-- Leaflet CSS styling for the map interface -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
@@ -14,12 +14,15 @@
 </head>
 <body>
 
-    <!-- 2. The canvas container where the map is drawn -->
+    <!-- The canvas container where the map is drawn -->
     <div id="map"></div>
 
-    <!-- 3. Leaflet JavaScript library -->
+    <!-- Leaflet JavaScript library -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Fix for OpenStreetMap 403 local tile block policy
+        L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
+
         // Initialize the map centered over Brisbane
         var map = L.map('map').setView([-27.4698, 153.0251], 12);
 
@@ -32,7 +35,7 @@
         // Object to hold layers for the toggle menu
         var overlayLayers = {};
 
-        // 4A. Load your Zoning GeoJSON file
+        // Load your Zoning GeoJSON file
         fetch('zoning.geojson')
             .then(response => response.json())
             .then(data => {
@@ -45,7 +48,7 @@
                 L.control.layers(null, overlayLayers, {collapsed: false}).addTo(map);
             });
 
-        // 4B. Load your Bus Stops GeoJSON file
+        // Load your Bus Stops GeoJSON file
         fetch('stops.geojson')
             .then(response => response.json())
             .then(data => {
