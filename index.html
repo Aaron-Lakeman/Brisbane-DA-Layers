@@ -60,42 +60,11 @@
         // Bypass local OpenStreetMap tile restrictions
         L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
 
-        // 1. DEFINE GUARANTEED KEYLESS BASE MAPS
+        // 1. DEFINE KEYLESS BASE MAPS
         var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         });
 
-        var esriDarkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 16,
-            attribution: 'Tiles &copy; Esri'
-        });
-
-        var esriWorldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 18,
-            attribution: 'Tiles &copy; Esri'
-        });
-
-        // Initialize map centered over Brisbane with OpenStreetMap as default
-        var map = L.map('map', {
-            layers: [osmLayer]
-        }).setView([-27.4698, 153.0251], 12);
-
-        // Group base layers for the toggle control
-        var baseLayers = {
-            "OpenStreetMap (Standard)": osmLayer,
-            "Esri Dark Gray": esriDarkLayer,
-            "Esri Satellite Imagery": esriWorldImagery
-        };
-
-        var overlayLayers = {};
-
-        // Add Layer Control panel
-        var layerControl = L.control.layers(baseLayers, overlayLayers, {collapsed: false}).addTo(map);
-
-        // 2. ADD ADDRESS SEARCH CONTROL
-        var searchControl = L.esri.Geocoding.geosearch({
-            position: 'topleft',
-            placeholder: 'Search Brisbane address or suburb...',
-            useMapBounds: false
-        }).addTo(map);
+        // CartoDB Positron (Clean Light Theme)
+        var lightLayer = L.tileLayer('
