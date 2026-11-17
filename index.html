@@ -60,14 +60,16 @@
         // Bypass local OpenStreetMap tile restrictions
         L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
 
-        // Initialize map centered over Brisbane with standard OpenStreetMap
+        // Centered over Brisbane
         var map = L.map('map').setView([-27.4698, 153.0251], 12);
 
+        // Add OpenStreetMap base layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
+        // Initialize Layer Control
         var overlayLayers = {};
         var layerControl = L.control.layers(null, overlayLayers, {collapsed: false}).addTo(map);
 
@@ -80,4 +82,61 @@
 
         var searchResults = L.layerGroup().addTo(map);
 
-        searchControl.on('results', function (data
+        searchControl.on('results', function (data) {
+            searchResults.clearLayers();
+            for (var i = data.results.length - 1; i >= 0; i--) {
+                searchResults.addLayer(L.marker(data.results[i].latlng));
+            }
+        });
+
+        // 2. LOAD STATION BUFFERS GEOJSON (With Tooltip)
+        fetch('Station_buffers.geojson')
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load Station_buffers.geojson');
+                return response.json();
+            })
+            .then(data => {
+                var bufferLayer = L.geoJSON(data, {
+                    style: { color: "#3388ff", fillColor: "#3388ff", weight: 1.5, fillOpacity: 0.25 },
+                    onEachFeature: function (feature, layer) {
+                        var stationName = feature.properties.STAT_NAME || feature.properties.name || "Train Station";
+                        layer.bindTooltip("<b>" + stationName + "</b><br>400m Walk Buffer", { sticky: true });
+                    }
+                }).addTo(map);
+                layerControl.addOverlay(bufferLayer, "400m Station Buffers");
+            })
+            .catch(error => console.error(error));
+
+        // 3. LOAD ZONING GEOJSON (With Tooltip)
+        fetch('zoning.geojson')
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load zoning.geojson');
+                return response.json();
+            })
+            .then(data => {
+                var zoningLayer = L.geoJSON(data, {
+                    style: { color: "#e74c3c", fillColor: "#fa8072", weight: 1, fillOpacity: 0.6 },
+                    onEachFeature: function (feature, layer) {
+                        var zoneName = feature.properties.ZONE_NAME || feature.properties.zone || "Low-Medium Density Residential (LMR)";
+                        layer.bindTooltip("<b>Zone:</b> " + zoneName, { sticky: true });
+                    }
+                }).addTo(map);
+                layerControl.addOverlay(zoningLayer, "LMR Land");
+            })
+            .catch(error => console.error(error));
+
+        // 4. ADD MAP LEGEND
+        var legend = L.control({ position: 'bottomright' });
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = '<h4>Map Layers</h4>';
+            div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #fa8072; border-color: #e74c3c;"></div> LMR Zoning</div>';
+            div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #3388ff; border-color: #3388ff;"></div> 400m Rail Station Buffer</div>';
+            return div;
+        };
+
+        legend.addTo(map);
+    </script>
+</body>
+</html>
