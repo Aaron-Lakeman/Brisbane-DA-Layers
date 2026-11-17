@@ -7,9 +7,42 @@
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Esri Leaflet Geocoder CSS (Address Search) -->
+    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@3.1.4/dist/esri-leaflet-geocoder.css" />
+
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
         #map { height: 100%; width: 100%; }
+
+        /* Custom Legend Styling */
+        .legend {
+            background: white;
+            padding: 10px 14px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            line-height: 18px;
+            color: #333;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        .legend h4 {
+            margin: 0 0 8px;
+            font-size: 14px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .legend-color {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            border-radius: 3px;
+            border: 1px solid #666;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -18,43 +51,112 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Esri Leaflet & Geocoder JS (Address Search) -->
+    <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
+    <script src="https://unpkg.com/esri-leaflet-geocoder@3.1.4/dist/esri-leaflet-geocoder.js"></script>
+
     <script>
         // Bypass local OpenStreetMap tile restrictions
         L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
 
-        // Centered over Brisbane
-        var map = L.map('map').setView([-27.4698, 153.0251], 12);
-
-        // Add OpenStreetMap base layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // 1. DEFINE BASE MAPS (Including Dark Mode and Light Minimalist)
+        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+        });
+
+        var darkMatterLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors & CARTO'
+        });
+
+        var positronLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors & CARTO'
+        });
+
+        // Initialize map centered over Brisbane with OpenStreetMap as default
+        var map = L.map('map', {
+            layers: [osmLayer]
+        }).setView([-27.4698, 153.0251], 12);
+
+        // Group base layers for the toggle control
+        var baseLayers = {
+            "OpenStreetMap": osmLayer,
+            "Dark Theme (CartoDB)": darkMatterLayer,
+            "Light Theme (CartoDB)": positronLayer
+        };
 
         var overlayLayers = {};
 
-        // Load Station Buffers GeoJSON
+        // Add Layer Control panel (Base maps use radio buttons, Overlays use checkboxes)
+        var layerControl = L.control.layers(baseLayers, overlayLayers, {collapsed: false}).addTo(map);
+
+        // 2. ADD ADDRESS SEARCH CONTROL
+        var searchControl = L.esri.Geocoding.geosearch({
+            position: 'topleft',
+            placeholder: 'Search Brisbane address or suburb...',
+            useMapBounds: false
+        }).addTo(map);
+
+        var searchResults = L.layerGroup().addTo(map);
+
+        searchControl.on('results', function (data) {
+            searchResults.clearLayers();
+            for (var i = data.results.length - 1; i >= 0; i--) {
+                searchResults.addLayer(L.marker(data.results[i].latlng));
+            }
+        });
+
+        // 3. LOAD STATION BUFFERS GEOJSON
         fetch('Station_buffers.geojson')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load Station_buffers.geojson');
+                return response.json();
+            })
             .then(data => {
                 var bufferLayer = L.geoJSON(data, {
-                    style: { color: "#3388ff", weight: 1, fillOpacity: 0.2 }
+                    style: { color: "#3388ff", fillColor: "#3388ff", weight: 1.5, fillOpacity: 0.25 },
+                    onEachFeature: function (feature, layer) {
+                        var stationName = feature.properties.STAT_NAME || feature.properties.name || "Train Station";
+                        layer.bindTooltip("<b>" + stationName + "</b><br>400m Walk Buffer", { sticky: true });
+                    }
                 }).addTo(map);
-                overlayLayers["400m Station Buffers"] = bufferLayer;
-            });
+                layerControl.addOverlay(bufferLayer, "400m Station Buffers");
+            })
+            .catch(error => console.error(error));
 
-        // Load Zoning GeoJSON
+        // 4. LOAD ZONING GEOJSON
         fetch('zoning.geojson')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to load zoning.geojson');
+                return response.json();
+            })
             .then(data => {
                 var zoningLayer = L.geoJSON(data, {
-                    style: { color: "salmon", weight: 1, fillOpacity: 0.6 }
+                    style: { color: "#e74c3c", fillColor: "#fa8072", weight: 1, fillOpacity: 0.6 },
+                    onEachFeature: function (feature, layer) {
+                        var zoneName = feature.properties.ZONE_NAME || feature.properties.zone || "Low-Medium Density Residential (LMR)";
+                        layer.bindTooltip("<b>Zone:</b> " + zoneName, { sticky: true });
+                    }
                 }).addTo(map);
-                overlayLayers["LMR Land"] = zoningLayer;
-                
-                // Add layer toggle menu
-                L.control.layers(null, overlayLayers, {collapsed: false}).addTo(map);
-            });
+                layerControl.addOverlay(zoningLayer, "LMR Land");
+            })
+            .catch(error => console.error(error));
+
+        // 5. ADD MAP LEGEND
+        var legend = L.control({ position: 'bottomright' });
+
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML = '<h4>Map Layers</h4>';
+            div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #fa8072; border-color: #e74c3c;"></div> LMR Zoning</div>';
+            div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #3388ff; border-color: #3388ff;"></div> 400m Rail Station Buffer</div>';
+            return div;
+        };
+
+        legend.addTo(map);
     </script>
 </body>
 </html>

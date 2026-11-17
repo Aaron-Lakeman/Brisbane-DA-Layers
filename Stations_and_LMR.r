@@ -37,6 +37,10 @@ station_buffers_clean <- station_buffers %>%
 mapview(lmr_near_stations, col.regions = "salmon", layer.name = "LMR Land") + 
   mapview(station_buffers_clean, col.regions = "lightblue", layer.name = "400m Buffers")
 
+#Transform back to WGS84 (Lat/Long) so Leaflet can read the coordinates
+lmr_near_stations <- st_transform(lmr_near_stations, 4326)
+station_buffers_clean <- st_transform(station_buffers_clean, 4326)
+
 # Export layers to GeoJSON files within the project folder
 st_write(lmr_near_stations, "zoning.geojson", delete_dsn = TRUE)
 st_write(station_buffers_clean, "Station_buffers.geojson", delete_dsn = TRUE)
