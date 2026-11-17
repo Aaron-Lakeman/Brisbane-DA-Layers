@@ -60,20 +60,22 @@
         // Bypass local OpenStreetMap tile restrictions
         L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
 
-        // 1. DEFINE BASE MAPS (Including Dark Mode and Light Minimalist)
+        // 1. DEFINE BASE MAPS (Using keyless public providers)
         var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
         });
 
-        var darkMatterLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors & CARTO'
+        // Stamen / Stadia toner-lite (Clean minimal grayscale/light style)
+        var lightMatterLayer = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>, &copy; <a href="https://stamen.com/">Stamen Design</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         });
 
-        var positronLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors & CARTO'
+        // Esri World Gray Canvas (Clean modern dark/gray theme alternative)
+        var darkMatterLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 16,
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
         });
 
         // Initialize map centered over Brisbane with OpenStreetMap as default
@@ -84,13 +86,13 @@
         // Group base layers for the toggle control
         var baseLayers = {
             "OpenStreetMap": osmLayer,
-            "Dark Theme (CartoDB)": darkMatterLayer,
-            "Light Theme (CartoDB)": positronLayer
+            "Light Minimal": lightMatterLayer,
+            "Esri Dark Gray": darkMatterLayer
         };
 
         var overlayLayers = {};
 
-        // Add Layer Control panel (Base maps use radio buttons, Overlays use checkboxes)
+        // Add Layer Control panel
         var layerControl = L.control.layers(baseLayers, overlayLayers, {collapsed: false}).addTo(map);
 
         // 2. ADD ADDRESS SEARCH CONTROL
@@ -117,46 +119,4 @@
             })
             .then(data => {
                 var bufferLayer = L.geoJSON(data, {
-                    style: { color: "#3388ff", fillColor: "#3388ff", weight: 1.5, fillOpacity: 0.25 },
-                    onEachFeature: function (feature, layer) {
-                        var stationName = feature.properties.STAT_NAME || feature.properties.name || "Train Station";
-                        layer.bindTooltip("<b>" + stationName + "</b><br>400m Walk Buffer", { sticky: true });
-                    }
-                }).addTo(map);
-                layerControl.addOverlay(bufferLayer, "400m Station Buffers");
-            })
-            .catch(error => console.error(error));
-
-        // 4. LOAD ZONING GEOJSON
-        fetch('zoning.geojson')
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to load zoning.geojson');
-                return response.json();
-            })
-            .then(data => {
-                var zoningLayer = L.geoJSON(data, {
-                    style: { color: "#e74c3c", fillColor: "#fa8072", weight: 1, fillOpacity: 0.6 },
-                    onEachFeature: function (feature, layer) {
-                        var zoneName = feature.properties.ZONE_NAME || feature.properties.zone || "Low-Medium Density Residential (LMR)";
-                        layer.bindTooltip("<b>Zone:</b> " + zoneName, { sticky: true });
-                    }
-                }).addTo(map);
-                layerControl.addOverlay(zoningLayer, "LMR Land");
-            })
-            .catch(error => console.error(error));
-
-        // 5. ADD MAP LEGEND
-        var legend = L.control({ position: 'bottomright' });
-
-        legend.onAdd = function (map) {
-            var div = L.DomUtil.create('div', 'legend');
-            div.innerHTML = '<h4>Map Layers</h4>';
-            div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #fa8072; border-color: #e74c3c;"></div> LMR Zoning</div>';
-            div.innerHTML += '<div class="legend-item"><div class="legend-color" style="background: #3388ff; border-color: #3388ff;"></div> 400m Rail Station Buffer</div>';
-            return div;
-        };
-
-        legend.addTo(map);
-    </script>
-</body>
-</html>
+                    style: { color: "#3388ff", fillColor: "#3
