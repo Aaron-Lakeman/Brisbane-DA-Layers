@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Brisbane Transit & Zoning Feasibility</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
+        #map { height: 100%; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Bypass local OpenStreetMap tile restrictions
+        L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
+
+        // Centered over Brisbane
+        var map = L.map('map').setView([-27.4698, 153.0251], 12);
+
+        // Add OpenStreetMap base layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var overlayLayers = {};
+
+        // Load Station Buffers GeoJSON
+        fetch('Station_buffers.geojson')
+            .then(response => response.json())
+            .then(data => {
+                var bufferLayer = L.geoJSON(data, {
+                    style: { color: "#3388ff", weight: 1, fillOpacity: 0.2 }
+                }).addTo(map);
+                overlayLayers["400m Station Buffers"] = bufferLayer;
+            });
+
+        // Load Zoning GeoJSON
+        fetch('zoning.geojson')
+            .then(response => response.json())
+            .then(data => {
+                var zoningLayer = L.geoJSON(data, {
+                    style: { color: "salmon", weight: 1, fillOpacity: 0.6 }
+                }).addTo(map);
+                overlayLayers["LMR Land"] = zoningLayer;
+                
+                // Add layer toggle menu
+                L.control.layers(null, overlayLayers, {collapsed: false}).addTo(map);
+            });
+    </script>
+</body>
+</html>
