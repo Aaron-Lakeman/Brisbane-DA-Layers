@@ -60,11 +60,24 @@
         // Bypass local OpenStreetMap tile restrictions
         L.TileLayer.prototype.options.referrerPolicy = 'strict-origin-when-cross-origin';
 
-        // 1. DEFINE KEYLESS BASE MAPS
-        var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Initialize map centered over Brisbane with standard OpenStreetMap
+        var map = L.map('map').setView([-27.4698, 153.0251], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
-        });
+        }).addTo(map);
 
-        // CartoDB Positron (Clean Light Theme)
-        var lightLayer = L.tileLayer('
+        var overlayLayers = {};
+        var layerControl = L.control.layers(null, overlayLayers, {collapsed: false}).addTo(map);
+
+        // 1. ADD ADDRESS SEARCH CONTROL
+        var searchControl = L.esri.Geocoding.geosearch({
+            position: 'topleft',
+            placeholder: 'Search Brisbane address or suburb...',
+            useMapBounds: false
+        }).addTo(map);
+
+        var searchResults = L.layerGroup().addTo(map);
+
+        searchControl.on('results', function (data
