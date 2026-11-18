@@ -8,8 +8,8 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Esri Leaflet Geocoder CSS (Address Search) -->
-    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@3.1.4/dist/esri-leaflet-geocoder.css" />
+    <!-- Leaflet Control Geocoder CSS (Free Address Search) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
@@ -52,9 +52,8 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Esri Leaflet & Geocoder JS (Address Search) -->
-    <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
-    <script src="https://unpkg.com/esri-leaflet-geocoder@3.1.4/dist/esri-leaflet-geocoder.js"></script>
+    <!-- Leaflet Control Geocoder JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <script>
         // Bypass local OpenStreetMap tile restrictions
@@ -73,21 +72,12 @@
         var overlayLayers = {};
         var layerControl = L.control.layers(null, overlayLayers, {collapsed: false}).addTo(map);
 
-        // 1. ADD ADDRESS SEARCH CONTROL
-        var searchControl = L.esri.Geocoding.geosearch({
+        // 1. FREE KEYLESS ADDRESS SEARCH CONTROL (Nominatim)
+        L.Control.geocoder({
             position: 'topleft',
             placeholder: 'Search Brisbane address or suburb...',
-            useMapBounds: false
+            defaultMarkGeocode: true
         }).addTo(map);
-
-        var searchResults = L.layerGroup().addTo(map);
-
-        searchControl.on('results', function (data) {
-            searchResults.clearLayers();
-            for (var i = data.results.length - 1; i >= 0; i--) {
-                searchResults.addLayer(L.marker(data.results[i].latlng));
-            }
-        });
 
         // 2. LOAD STATION BUFFERS GEOJSON (With Tooltip)
         fetch('Station_buffers.geojson')
